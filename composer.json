@@ -1,0 +1,13 @@
+{
+    "name": "vladimir/site_dispenser",
+    "type": "project",
+    "require": {
+        "larapack/dd": "^1.1"
+    },
+    "authors": [
+        {
+            "name": "Vladimir Castro",
+            "email": "vcastroglez@gmail.com"
+        }
+    ]
+}
