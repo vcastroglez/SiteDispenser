@@ -1,4 +1,11 @@
 <?php
+require_once "vendor/autoload.php";
+
+if (!empty($_SERVER['REQUEST_URI'])) {
+	include "master.php";
+	die;
+}
+
 $all = scandir(__DIR__ . '/..');
 $all = array_filter($all, fn($file) => !in_array($file, ['.', '..', 'vendor']));
 ?>
