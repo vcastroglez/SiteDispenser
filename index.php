@@ -19,13 +19,6 @@ if ($uri === '') {
 if ($parts[0] === 'site' && isset($parts[1])) {
 	$project = preg_replace('/[^a-zA-Z0-9_-]/', '', $parts[1]);
 	$projectRoot = realpath("$projectsDir/$project");
-
-	if (!$projectRoot || strpos($projectRoot, realpath($projectsDir)) !== 0) {
-		http_response_code(404);
-		echo "Invalid project.";
-		exit;
-	}
-
 	$publicDir = "$projectRoot/public";
 	$indexPath = "$publicDir/index.php";
 
@@ -34,6 +27,15 @@ if ($parts[0] === 'site' && isset($parts[1])) {
 		echo "Laravel entry point not found.";
 		exit;
 	}
+	$projectBasePath = '/site/' . $project;
+	$scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https" : "http";
+	$host = $_SERVER['HTTP_HOST'];
+	$baseUrl = $scheme . "://" . $host . $projectBasePath;
+
+	putenv("APP_URL=$baseUrl");
+
+	$_ENV['APP_URL'] = $baseUrl;
+	$_SERVER['APP_URL'] = $baseUrl;
 
 	// Rewrite $_SERVER variables to simulate Laravel context
 	$_SERVER['SCRIPT_FILENAME'] = $indexPath;
