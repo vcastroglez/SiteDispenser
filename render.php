@@ -1,6 +1,7 @@
 <?php
 $site ??= 'dummy';
 $uri_parts ??= [];
+$request_uri ??= "";
 
 $root_path = realpath(__DIR__ . '/../' . $site);
 $public_path = "$root_path/public/";
