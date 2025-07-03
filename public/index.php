@@ -1,8 +1,8 @@
 <?php
-$projectsDir = __DIR__ . '/projects';
+$baseDir = dirname(__DIR__);
+$projectsDir = $baseDir . '/projects';
 $uri = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
 $parts = explode('/', $uri);
-
 // Homepage listing
 if ($uri === '') {
 	$projects = array_filter(glob($projectsDir . '/*'), 'is_dir');

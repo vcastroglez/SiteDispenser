@@ -1,10 +1,10 @@
 RewriteEngine On
 RewriteBase /
 
-# If the URL starts with /site/projectName
+# Serve static assets from Laravel's public folders
 RewriteCond %{REQUEST_URI} ^/site/([^/]+)/(.*)$
-RewriteCond %{DOCUMENT_ROOT}/projects/%1/public/%2 -f
-RewriteRule ^site/([^/]+)/(.*)$ /projects/%1/public/%2 [L]
+RewriteCond %{DOCUMENT_ROOT}/../projects/%1/public/%2 -f
+RewriteRule ^site/([^/]+)/(.*)$ ../projects/%1/public/%2 [L]
 
 # Otherwise route to dispatcher
 RewriteCond %{REQUEST_FILENAME} !-f
