@@ -3,7 +3,7 @@ $site ??= 'dummy';
 $uri_parts ??= [];
 $request_uri ??= "";
 
-$root_path = realpath(__DIR__ . '/../' . $site);
+$root_path = realpath(__DIR__ . '/html/' . $site);
 $public_path = "$root_path/public/";
 $has_public = is_dir($public_path);
 $refereer = $_SERVER['HTTP_REFERER'];
@@ -36,4 +36,5 @@ if ($has_index_html) {
 	die;
 }
 
-dd("DOn't know what to do :/");//vla
+echo("DOn't know what to do :/");//vla
+exit;

@@ -1,54 +1,54 @@
 <?php
-require_once "vendor/autoload.php";
+$projectsDir = __DIR__ . '/projects';
+$uri = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
+$parts = explode('/', $uri);
 
-$request_uri = $_SERVER['REQUEST_URI'];
-$refereer = $_SERVER['HTTP_REFERER'];
-
-file_put_contents("log.log", "-------------------\n", FILE_APPEND);
-file_put_contents("log.log", "$refereer\n", FILE_APPEND);
-file_put_contents("log.log", "$request_uri\n", FILE_APPEND);
-
-if (str_contains($refereer, 'main-site') && str_contains($refereer, 'site') && !str_contains($request_uri, '/site')) {
-	$wanted_file = $request_uri;
-	$request_uri = $refereer;
-	$request_uri = str_replace('http://'.$_SERVER['HTTP_HOST'], "", $request_uri);
-	$request_uri = str_replace('https://'.$_SERVER['HTTP_HOST'], "", $request_uri);
-	$request_uri = str_replace('/index', $wanted_file, $request_uri);
-	$_SERVER['REQUEST_URI'] = $request_uri;
-}
-file_put_contents("log.log", "$request_uri\n", FILE_APPEND);
-file_put_contents("log.log", "-------------------\n", FILE_APPEND);
-
-if ($request_uri != '/') {
-	$uri_parts = explode('/', trim($request_uri, '/'));
-	file_put_contents("log.log", "$uri_parts[0]\n", FILE_APPEND);
-	if ($uri_parts[0] == 'site') {
-		$site = $uri_parts[1];
-		include 'render.php';
-		die;
+// Homepage listing
+if ($uri === '') {
+	$projects = array_filter(glob($projectsDir . '/*'), 'is_dir');
+	echo "<h1>Select a project:</h1><ul>";
+	foreach ($projects as $projectPath) {
+		$projectName = basename($projectPath);
+		echo "<li><a href=\"/site/$projectName\">$projectName</a></li>";
 	}
+	echo "</ul>";
+	exit;
 }
 
-$all = scandir(__DIR__ . '/..');
-$all = array_filter($all, fn($file) => !in_array($file, ['.', '..', 'vendor']));
-?>
+// Routing logic
+if ($parts[0] === 'site' && isset($parts[1])) {
+	$project = preg_replace('/[^a-zA-Z0-9_-]/', '', $parts[1]);
+	$projectRoot = realpath("$projectsDir/$project");
 
-<!doctype html>
-<html lang="en" >
-<head >
-	<meta charset="UTF-8" >
-	<meta name="viewport" content="width=device-width, initial-scale=1" >
-	<title >Site dispenser</title >
-</head >
-<body >
-<table >
-	<tbody >
-	<?php foreach ($all as $file) { ?>
-		<tr style="text-align: left" >
-			<td ><a href="/site/<?php echo $file; ?>/main-site" target="_blank" ><?php echo $file; ?></a ></td >
-		</tr >
-	<?php } ?>
-	</tbody >
-</table >
-</body >
-</html >
+	if (!$projectRoot || strpos($projectRoot, realpath($projectsDir)) !== 0) {
+		http_response_code(404);
+		echo "Invalid project.";
+		exit;
+	}
+
+	$publicDir = "$projectRoot/public";
+	$indexPath = "$publicDir/index.php";
+
+	if (!file_exists($indexPath)) {
+		http_response_code(500);
+		echo "Laravel entry point not found.";
+		exit;
+	}
+
+	// Rewrite $_SERVER variables to simulate Laravel context
+	$_SERVER['SCRIPT_FILENAME'] = $indexPath;
+	$_SERVER['SCRIPT_NAME'] = '/index.php';
+	$_SERVER['PHP_SELF'] = '/index.php';
+
+	// Fix path for Laravel routing
+	$_SERVER['REQUEST_URI'] = '/' . implode('/', array_slice($parts, 2));
+
+	// Change directory to public (Laravel expects it)
+	chdir($publicDir);
+	require $indexPath;
+	exit;
+}
+
+// Not found
+http_response_code(404);
+echo "Page not found.";

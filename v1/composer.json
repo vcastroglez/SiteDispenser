@@ -2,7 +2,7 @@
     "name": "vladimir/site_dispenser",
     "type": "project",
     "require": {
-        "larapack/dd": "^1.1"
+        "vendor/larapack/dd": "^1.1"
     },
     "authors": [
         {
