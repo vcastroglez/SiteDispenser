@@ -8,7 +8,7 @@ file_put_contents("log.log", "-------------------\n", FILE_APPEND);
 file_put_contents("log.log", "$refereer\n", FILE_APPEND);
 file_put_contents("log.log", "$request_uri\n", FILE_APPEND);
 
-if (str_contains($refereer, 'index') && str_contains($refereer, 'site') && !str_contains($request_uri, '/site')) {
+if (str_contains($refereer, 'main-site') && str_contains($refereer, 'site') && !str_contains($request_uri, '/site')) {
 	$wanted_file = $request_uri;
 	$request_uri = $refereer;
 	$request_uri = str_replace('http://'.$_SERVER['HTTP_HOST'], "", $request_uri);
@@ -45,7 +45,7 @@ $all = array_filter($all, fn($file) => !in_array($file, ['.', '..', 'vendor']));
 	<tbody >
 	<?php foreach ($all as $file) { ?>
 		<tr style="text-align: left" >
-			<td ><a href="/site/<?php echo $file; ?>/index" target="_blank" ><?php echo $file; ?></a ></td >
+			<td ><a href="/site/<?php echo $file; ?>/main-site" target="_blank" ><?php echo $file; ?></a ></td >
 		</tr >
 	<?php } ?>
 	</tbody >

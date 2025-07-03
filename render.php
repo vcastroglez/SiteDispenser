@@ -8,7 +8,7 @@ $public_path = "$root_path/public/";
 $has_public = is_dir($public_path);
 $refereer = $_SERVER['HTTP_REFERER'];
 
-if (count($uri_parts) > 2 && $uri_parts[2] !== 'index') {
+if (count($uri_parts) > 2 && $uri_parts[2] !== 'main-site') {
 	unset($uri_parts[0]);
 	unset($uri_parts[1]);
 	$uri_parts = implode('/', $uri_parts);
