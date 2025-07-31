@@ -1,56 +1,105 @@
 <?php
-$baseDir = dirname(__DIR__);
-$projectsDir = $baseDir . '/projects';
-$uri = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
-$parts = explode('/', $uri);
+session_start();
+
+try {
+	$baseDir = dirname(__DIR__);
+	$projectsDir = $baseDir . '/projects';
+	$uri = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
+	$parts = explode('/', $uri);
 // Homepage listing
-if ($uri === '') {
-	$projects = array_filter(glob($projectsDir . '/*'), 'is_dir');
-	echo "<h1>Select a project:</h1><ul>";
-	foreach ($projects as $projectPath) {
-		$projectName = basename($projectPath);
-		echo "<li><a href=\"/site/$projectName\">$projectName</a></li>";
-	}
-	echo "</ul>";
-	exit;
-}
-
-// Routing logic
-if ($parts[0] === 'site' && isset($parts[1])) {
-	$project = preg_replace('/[^a-zA-Z0-9_-]/', '', $parts[1]);
-	$projectRoot = realpath("$projectsDir/$project");
-	$publicDir = "$projectRoot/public";
-	$indexPath = "$publicDir/index.php";
-
-	if (!file_exists($indexPath)) {
-		http_response_code(500);
-		echo "Laravel entry point not found.";
+	if ($uri === '') {
+		$projects = array_filter(glob($projectsDir . '/*'), 'is_dir');
+		echo "<h1>Select a project:</h1><ul>";
+		foreach ($projects as $projectPath) {
+			$projectName = basename($projectPath);
+			echo "<li><a href=\"/site/$projectName\">$projectName</a></li>";
+		}
+		echo "</ul>";
 		exit;
 	}
-	$projectBasePath = '/site/' . $project;
-	$scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https" : "http";
-	$host = $_SERVER['HTTP_HOST'];
-	$baseUrl = $scheme . "://" . $host . $projectBasePath;
+	$part_1 = $parts[1] ?? null;
 
-	putenv("APP_URL=$baseUrl");
+// Routing logic
+	if ($parts[0] === 'site' && !is_null($part_1)) {
+		$resource = null;
+		$ext = null;
+		if (isProject($part_1)) {
+			$_SESSION['site'] = $part_1;
+		} else if (!empty($_SESSION['site'])) {
+			$resource_name = $part_1;
+			$part_1 = $_SESSION['site'];
+			$resource = "$projectsDir/$part_1/$resource_name";
+			$ext = explode('.', $resource_name);
+			$ext = $ext[array_key_last($ext)];
+		}
 
-	$_ENV['APP_URL'] = $baseUrl;
-	$_SERVER['APP_URL'] = $baseUrl;
+		if (!is_null($resource) && file_exists($resource) && in_array($ext, ['png', 'jpeg', 'js', 'css'])) {
+			$mime = mime_content_type($resource);
+			header("Content-type: $mime");
+			echo file_get_contents($resource);
+			die;
+		}
+		$project = preg_replace('/[^a-zA-Z0-9_-]/', '', $part_1);
+		$projectRoot = realpath("$projectsDir/$project");
+		$publicDir = "$projectRoot/public";
+		$indexPath = "$publicDir/index.php";
 
-	// Rewrite $_SERVER variables to simulate Laravel context
-	$_SERVER['SCRIPT_FILENAME'] = $indexPath;
-	$_SERVER['SCRIPT_NAME'] = '/index.php';
-	$_SERVER['PHP_SELF'] = '/index.php';
+		$is_html = false;
+		if (!file_exists($indexPath)) {
+			//Try without a public folder
+			$publicDir = $projectRoot;
+			$indexPath = "$publicDir/index.php";
+			if (!file_exists($indexPath)) {
+				$indexPath = "$publicDir/index.html";
+				$is_html = true;
+			}
+		}
+		$projectBasePath = '/site/' . $project;
+		$scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https" : "http";
+		$host = $_SERVER['HTTP_HOST'];
+		$baseUrl = $scheme . "://" . $host . $projectBasePath;
 
-	// Fix path for Laravel routing
-	$_SERVER['REQUEST_URI'] = '/' . implode('/', array_slice($parts, 2));
+		putenv("APP_URL=$baseUrl");
 
-	// Change directory to public (Laravel expects it)
-	chdir($publicDir);
-	require $indexPath;
-	exit;
-}
+		$_ENV['APP_URL'] = $baseUrl;
+		$_SERVER['APP_URL'] = $baseUrl;
+
+		// Rewrite $_SERVER variables to simulate Laravel context
+		$_SERVER['SCRIPT_FILENAME'] = $indexPath;
+		$_SERVER['SCRIPT_NAME'] = '/index.php';
+		$_SERVER['PHP_SELF'] = '/index.php';
+
+		// Fix path for Laravel routing
+		$_SERVER['REQUEST_URI'] = '/' . implode('/', array_slice($parts, 2));
+
+		// Change directory to public (Laravel expects it)
+		chdir($publicDir);
+		if (!$is_html) {
+			require $indexPath;
+		} else {
+			echo file_get_contents($indexPath);
+			die;
+		}
+		exit;
+	}
 
 // Not found
-http_response_code(404);
-echo "Page not found.";
+	http_response_code(404);
+	echo "Page not found.";
+} catch (Throwable $e) {
+	echo '<pre>';
+	var_dump($e);
+	die;
+}
+
+/**
+ * @param string $part_1
+ *
+ * @return bool
+ */
+function isProject(string $part_1): bool
+{
+	global $projectsDir;
+	$projects = glob($projectsDir . '/*');
+	return in_array("$projectsDir/$part_1", $projects);
+}
