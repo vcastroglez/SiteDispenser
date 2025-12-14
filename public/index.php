@@ -17,6 +17,7 @@ try {
 		echo "</ul>";
 		exit;
 	}
+	vla(json_encode($parts));
 	$part_1 = $parts[1] ?? null;
 
 // Routing logic
@@ -33,7 +34,7 @@ try {
 			$ext = $ext[array_key_last($ext)];
 		}
 
-		if (!is_null($resource) && file_exists($resource) && in_array($ext, ['png', 'jpeg', 'js', 'css'])) {
+		if (!is_null($resource) && file_exists($resource) && !in_array($ext, ['php', 'html'])) {
 			$mime = mime_content_type($resource);
 			header("Content-type: $mime");
 			echo file_get_contents($resource);
@@ -86,6 +87,7 @@ try {
 // Not found
 	http_response_code(404);
 	echo "Page not found.";
+
 } catch (Throwable $e) {
 	echo '<pre>';
 	var_dump($e);
@@ -102,4 +104,9 @@ function isProject(string $part_1): bool
 	global $projectsDir;
 	$projects = glob($projectsDir . '/*');
 	return in_array("$projectsDir/$part_1", $projects);
+}
+function vla(string $line): void
+{
+	touch('log.log');
+	file_put_contents('log.log', "\n".$line, FILE_APPEND);
 }
